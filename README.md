@@ -1,8 +1,11 @@
-# BSAD 6153 Project: &lt;your project name&gt;
+# BSAD 6153 Project: Home Appliance Export Market Explorer
 
-**Student:** &lt;your name&gt;
-**My decision:** &lt;the decision you make regularly that this project improves&gt;
+**Student:** Jonathangarcia
+**My decision:** Which destination markets should a home appliance exporter prioritize, based on import demand, growth, and competing suppliers?
 **Website:** &lt;your domain, from Week 4&gt;
+
+**Data source:** UN Comtrade API, using product codes for home appliances. The API key is stored locally in `.env` and excluded from Git.
+**Week 1 status:** Python 3.12 virtual environment created, requirements installed, and `scripts/check_setup.py` passes. An authenticated API test returned HTTP 200 and five trade records. No database has been created yet.
 
 This repository is one complete AI system, built over eight weeks: a real API, synced on a schedule into a
 PostgreSQL database, shown on a public website, with a chatbot and an agent that answer and act from your
