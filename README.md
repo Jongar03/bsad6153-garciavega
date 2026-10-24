@@ -1,7 +1,7 @@
-# BSAD 6153 Project: Home Appliance Export Market Explorer
+# BSAD 6153 Project: Exportation 1
 
 **Student:** Jonathangarcia
-**My decision:** Which destination markets should a home appliance exporter prioritize, based on import demand, growth, and competing suppliers?
+**My decision:** What rules do I need to follow to export home appliances from Spain to the USA?
 **Website:** &lt;your domain, from Week 4&gt;
 
 **Data source:** UN Comtrade API, using product codes for home appliances. The API key is stored locally in `.env` and excluded from Git.
