@@ -1,7 +1,7 @@
-# BSAD 6153 Project: European Soccer Match Analysis
+# BSAD 6153 Project: Exportation 1
 
 **Student:** Jonathangarcia
-**My decision:** Before kickoff, which home, draw, or away outcomes offer potential value based on historical statistics and available bookmaker odds, and when should I choose no bet?
+**My decision:** Which team should I bet on before kickoff, based on historical statistics and available bookmaker odds?
 **Website:** &lt;your domain, from Week 4&gt;
 
 **Data source:** API-Football (API-Sports), covering the Premier League, La Liga, Bundesliga, Serie A, and Ligue 1. The key is stored locally in `.env` and excluded from Git.
