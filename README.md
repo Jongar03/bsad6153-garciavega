@@ -1,11 +1,11 @@
-# BSAD 6153 Project: Exportation 1
+# BSAD 6153 Project: European Soccer Match Analysis
 
 **Student:** Jonathangarcia
-**My decision:** What rules do I need to follow to export home appliances from Spain to the USA?
+**My decision:** Before kickoff, which home, draw, or away outcomes offer potential value based on historical statistics and available bookmaker odds, and when should I choose no bet?
 **Website:** &lt;your domain, from Week 4&gt;
 
-**Data source:** UN Comtrade API, using product codes for home appliances. The API key is stored locally in `.env` and excluded from Git.
-**Week 1 status:** Python 3.12 virtual environment created, requirements installed, and `scripts/check_setup.py` passes. An authenticated API test returned HTTP 200 and five trade records. No database has been created yet.
+**Data source:** API-Football (API-Sports), covering the Premier League, La Liga, Bundesliga, Serie A, and Ligue 1. The key is stored locally in `.env` and excluded from Git.
+**Week 1 status:** Python 3.12 virtual environment created, requirements installed, and `scripts/check_setup.py` passes. API-Football authentication and the five-league catalogue returned HTTP 200. Season access, match statistics, and odds need separate validation. No database has been created yet.
 
 This repository is one complete AI system, built over eight weeks: a real API, synced on a schedule into a
 PostgreSQL database, shown on a public website, with a chatbot and an agent that answer and act from your
@@ -99,13 +99,35 @@ every command before you approve it, and keep auto-approve off.
 
 ## Project proposal (Week 1)
 
-<!-- About 300 words: data source and backup API, your decision and workflow (from your baseline log),
-     your first agent idea, and risks. See the Week 1 page. -->
+This project will analyze pre-match home, draw, and away outcomes across England's Premier League, Spain's La Liga, Germany's Bundesliga, Italy's Serie A, and France's Ligue 1. The decision is whether a match outcome offers potential value at the available bookmaker odds, including a no-bet option when the evidence is insufficient.
+
+The primary source is API-Football. The account and league-catalogue connection test succeeded. That test does not establish access to current-season fixtures, detailed statistics, injuries, lineups, expected goals, or odds. Each required resource and its league/season coverage must be checked before promising it in the application. The free plan advertises 100 requests per day with limited available seasons, so downloads will need caching and a request budget.
+
+The planned database will relate leagues, seasons, teams, fixtures, available match statistics, and timestamped odds snapshots. It has not been created. Candidate features include home/away performance, opponent strength, goals and shots, rest days, and pre-match lineup or injury information where accessible. Features must use only information available at the chosen prediction time; post-match statistics cannot be used to predict that same match.
+
+An initial model will estimate home/draw/away probabilities and compare them with odds. Evaluation will use chronological training and test windows, probability calibration, and comparisons with simple baselines. Historical odds and their timestamps must be validated before claiming any betting-return backtest. If historical snapshots are unavailable, the project can collect prospective snapshots and evaluate predictions separately. Profits are not guaranteed.
+
+A future AI assistant could explain model outputs with supporting database records and flag missing or stale information. Instructor approval for this new soccer scope has not yet been confirmed. Previous export-specific work is not part of the soccer setup pull request.
+
+### API documentation
+
+- [API-Football documentation](https://www.api-football.com/documentation_v3)
+- [Free plan and season limitations](https://www.api-football.com/pricing)
+- [Account setup and authentication](https://www.api-football.com/news/post/how-to-get-started-with-api-football-the-complete-beginners-guide)
+
+The direct API uses the `x-apisports-key` header. Store the key only in local `.env` or deployment secrets. `.env.example` contains empty variable names only. Data licensing, attribution, and redistribution terms must be reviewed before publishing data.
 
 ## How to run this project
 
-<!-- Keep this current: how to run the sync, the website, and the evaluations. -->
+Set `API_FOOTBALL_KEY` in local `.env`, then run from the project folder:
+
+```powershell
+.venv\Scripts\python.exe scripts/check_setup.py
+.venv\Scripts\python.exe scripts/check_football_api.py
+```
+
+The soccer connection check calls `/status` and `/leagues`, verifies an active subscription, and finds the five target leagues. It does not print the key or create a database. Full soccer ingestion and model evaluation are future work.
 
 ## Credits
 
-<!-- Your data API's required attribution, plus any open-source code or samples you used. -->
+Soccer data provider: [API-Football / API-Sports](https://www.api-football.com/). This project's calculated probabilities and interpretations will be distinguished from provider data.
