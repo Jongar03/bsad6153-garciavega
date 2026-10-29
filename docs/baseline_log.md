@@ -1,6 +1,6 @@
 # Baseline Log (Week 1)
 
-**My decision:** <!-- what you decide, in one line -->
+**My decision:** Which home-appliance category should a Spanish company prioritize for export to the United States, based on import growth and Spain's market share?
 **How often I make it:** <!-- e.g., twice a week -->
 
 Log each decision **while it happens**. Time yourself with a timer; don't estimate afterward.
