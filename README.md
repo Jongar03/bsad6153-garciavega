@@ -131,3 +131,17 @@ The soccer connection check calls `/status` and `/leagues`, verifies an active s
 ## Credits
 
 Soccer data provider: [API-Football / API-Sports](https://www.api-football.com/). This project's calculated probabilities and interpretations will be distinguished from provider data.
+
+## Project Proposal
+
+**Data source and backup.** My main source is API-Football, which I used to collect Premier League fixtures for the 2023 and 2024 seasons. If its access breaks, football-data.org is my backup, since it covers the same competitions and I have already worked with it.
+
+**Decision and workflow.** The decision I chose is "Which match do I analyze?" across Europe's five major football leagues. Today I make it by checking ESPN and OneFootball separately and comparing statistics by hand. In my first logged entry this took 14 minutes with a confidence of 3 out of 5, and much of the time went to switching between apps to find the same kind of information. My system should bring the statistics I care about into one place, so I can decide faster and with more confidence, based on real statistics rather than recent winning streaks.
+
+**Agent idea (first draft).** By Week 6, an agent could run weekly on its own: fetch the upcoming fixtures for the five leagues, pull each team's recent goals, home and away form, and head-to-head history, and produce a short ranked list of matches worth analyzing, with the numbers behind each ranking. It would only read data and write the list. It would never place bets or spend money, and it would ask before doing anything else.
+
+**Risks.**
+- Rate limits: the APIs cap requests, so the agent must wait between calls, back off and retry after a 429 error, and avoid repeating requests.
+- Key expiry: keys can expire or be revoked, so the agent should fail with a clear message, and the key stays in .env, never in Git.
+- Data volume: five leagues over several seasons is a lot of data, so raw files stay out of Git and the agent fetches only what is new.
+- Terms of service: my data dictionary shows that storage and commercial-use terms are partly unclear, so I will use the data only for personal study and re-check the terms before expanding.
