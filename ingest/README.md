@@ -46,4 +46,3 @@ Matches contain an API-Football league ID. football-data.org has its own competi
 
 `data/raw/` was already in `.gitignore` and remains excluded. Each run has its own folder. Request headers and API keys are not logged. JSON formatting is indented for readability, but response contents are preserved.
 
-The previous appliance-import fetcher and its guide are preserved as `fetch_comtrade.py` and `README_comtrade.md`. Its existing tests now import the preserved module. The football fetcher does not modify the appliance samples or database.

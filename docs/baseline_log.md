@@ -1,19 +1,35 @@
-# Baseline Log (Week 1)
+# Baseline log: When to bet and which team to choose using in-depth analysis of real statistics, rather than recent winning trends, across Europe's five major football leagues
 
-**My decision:** Which home-appliance category should a Spanish company prioritize for export to the United States, based on import growth and Spain's market share?
-**How often I make it:** <!-- e.g., twice a week -->
+|Date and decision<br /><br />October 29, Which match to analyze?<br />|What I looked at<br /><br />ESPN and OneFootball<br /><br />|Time spent<br /><br />12 minutes<br /><br />|What I wished I knew<br /><br />Nothing,I had what I needed<br /><br />|Confidence (1-5)<br /><br />3<br /><br /><br />|Live or reconstructed<br /><br />Live<br /><br />|
+|-|-|-|-|-|-|
 
-Log each decision **while it happens**. Time yourself with a timer; don't estimate afterward.
-Mark any entry you had to reconstruct from memory as *(reconstructed)*.
+## What are the three most frustrating or time-consuming parts?
 
-| Date | What I was deciding | What I looked at | Time (min) | What I wished I knew | Confidence (1&ndash;5) |
-|---|---|---|---|---|---|
-|  |  |  |  |  |  |
 
-## Reflection
 
-1. **The three most frustrating or time-consuming parts:**
-2. **What would make me trust a system's recommendation? What would make me ignore it?**
-3. **What a system should never do on my behalf without asking:**
-4. **How I would know it was actually helping** (this becomes my value hypothesis):
-5. **One assumption about my own workflow that this log proved wrong:**
+
+
+## If a system gave me a recommendation, what would make me trust it? What would make me ignore it?
+
+
+
+
+
+## What should a system never do on my behalf without asking?
+
+
+
+
+
+
+
+## How would I know whether it was actually helping?
+
+
+
+
+
+## One assumption about my workflow that the log proved wrong.
+
+
+
