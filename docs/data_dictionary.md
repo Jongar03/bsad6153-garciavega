@@ -1,5 +1,125 @@
 # Data dictionary
 
+## Milestone 3 update — 16 November 2026
+
+This section describes the implemented database sync and supersedes the older
+statements below about unimplemented change detection and access controls.
+The October raw-data dictionary is preserved as historical evidence; its raw
+fields are not all stored in the relational database. No provider terms or
+external documentation were rechecked for this update.
+
+### Lineage: source to stored records
+
+```text
+API-Football /fixtures (league 39, seasons 2023 and 2024)
+  -> ingest/sync.py: full-season or date-overlap requests, retries, response checks
+  -> temporary fixture JSON files (removed after processing)
+  -> ingest/load.py prepare_rows(..., minimum_matches=0): validate and map fields
+  -> league + team upserts first, then match upserts
+  -> transaction commits data + sync_state checkpoints + successful sync_runs result
+  -> app_reader: status queries and golden-question reference queries
+```
+
+The scheduled sync uses API-Football only. The older `ingest/fetch.py` also
+downloaded football-data.org competitions and proposed cross-provider mappings;
+those competition files and unconfirmed mappings are not inputs to this sync.
+
+| Destination | Source and transformations |
+| --- | --- |
+| league | `league.id`, `league.name`, and `league.country` become league_id, name, and country. Required text and integer IDs are validated; repeated embedded league objects are collapsed by ID. |
+| team | `teams.home` and `teams.away` supply team_id and name. Required IDs/names are validated, and repeated teams are collapsed by ID. League/team dictionaries keep the last encountered values for an ID within a batch; they do not independently resolve conflicting names. |
+| match | `fixture.id` becomes match_id; league/team IDs become foreign keys; `league.season` becomes season; `fixture.status.short` becomes status; `goals.home` and `goals.away` become score columns. `fixture.date` is parsed as a timezone-aware datetime (`Z` is interpreted as `+00:00`) and stored as timestamptz, preserving the instant. Season labels are not converted into calendar-year filters. |
+| Data-table audit fields | PostgreSQL sets first_seen_at and last_updated_at on insert. Conditional upserts preserve first_seen_at and change last_updated_at only when mapped source fields differ, using NULL-aware comparison. These are local storage timestamps, not source modification timestamps. |
+| sync_state | A `(league_id, season)` checkpoint stores the successful run's start time and most recent full-reconciliation start time. It is advanced in the same transaction as the data, not on a failed or rolled-back preview. |
+| sync_runs | The script creates a UUID and an initial durable run row, then records finish time, constrained status, validated fetched-fixture count, committed insert/update counts, safe error summary, trigger, and dry-run flag. Insert/update totals include league/team rows as well as matches. |
+
+Validation rejects a team playing itself, negative scores, missing required
+fields, timestamps without offsets, unexpected paging/scope, and conflicting
+snapshots of the same match. Identical repeated match IDs are collapsed.
+Missing scores remain NULL, not zero. Referee names, winner flags, extra-time
+details, logos, events, injuries, and other unmapped fields are not copied into
+these tables. The sync validates all configured batches before writing;
+transactions roll back data changes on failure. Missing source records are
+retained rather than interpreted as deletion requests.
+
+A failed run retains a separate history row with zero committed inserts/updates.
+A preview rolls back data/checkpoints but records a partial, dry-run history row.
+A NULL finished_at identifies a run without recorded completion (running or
+abruptly interrupted); the initial failed status alone is not a completed-failure
+diagnosis. Database outages can prevent creation or finalization of a log row.
+
+### Freshness guarantee and limits
+
+The configured cron is `23 */12 * * *`: 00:23 and 12:23 UTC. With successful,
+on-time executions, an API-visible change inside the date-overlap window is
+normally checked within about 12 hours plus execution time. The window begins
+seven days before the earlier of the last successful run date and latest stored
+fixture date, and ends fourteen days after the run date. Historical seasons
+therefore recheck their final matches rather than an empty current-date window.
+
+Older changes outside the overlap are checked at full reconciliation, triggered
+when at least seven days have elapsed since the last successful full run.
+Under an on-time, successful 12-hour schedule, a conservative planning window
+is seven days plus one scheduling interval and execution time. This is a target
+relative to availability in the API, not an unconditional freshness guarantee.
+
+**Worst case: there is no finite maximum data age.** Scheduler delays, missed
+runs, quota exhaustion, revoked credentials, provider outages, or database
+outages can leave the stored copy stale indefinitely until service is restored.
+The workflow's 40-minute job timeout limits a single attempt, not outage duration
+or source publication delays. Corrections that appear and disappear between
+fetches may never be observed. Other leagues/new seasons are outside the
+configured scope and have no refresh guarantee.
+
+The Q05 measurement on 2026-11-16 at 21:27:31.871397 UTC found the latest stored
+match was 2025-05-25 15:00 UTC. Frequent checks of these historical seasons do
+not provide current form. `scripts/status.py` reports the latest successful sync
+separately from the latest sync with inserts/updates; last_updated_at can remain
+old when a recently checked row has not changed.
+
+### Change log and evidence
+
+- 2026-11-16: implemented app_reader SELECT grants and RLS read policies;
+  verified login, safe INSERT/DELETE denial, and Data API disabled. The owner
+  connection writes; the reference checker and status script read as app_reader.
+- 2026-11-16: replaced insert-only behavior for syncs with conditional upserts
+  and transactional checkpoints. The first live preview and committed full
+  sync fetched 760 fixtures with zero inserts/updates. Incremental checks fetched
+  33 fixtures with zero inserts/updates (run evidence in docs/sync_tests.md).
+- 2026-11-16: live SQL checks confirmed the historical Premier League-only scope
+  and no flagged anomalies under the documented checks. Exact measurement times
+  and query definitions are in docs/data_quality.md and db/quality_checks.sql.
+- 2026-11-16: student back-to-back runs remained unchanged, and an intentionally
+  invalid API key produced exit code 1 and a failed history row without exposed
+  credentials. No real source correction or source deletion was observed in
+  these tests. Synthetic update testing does not establish a live source change.
+- 2026-11-16: PR 1 (#7) was merged and the GitHub manual run succeeded. At the
+  latest supplied Actions-list screenshot, only the manual run was visible.
+  Three scheduled successes spanning 48 hours and the reference-answer follow-up
+  after two additional scheduled successes have not yet been verified.
+
+### Ownership and failure response
+
+For this student project, the repository owner (Jongar03) is responsible for
+maintaining the pipeline, credentials, scope, run checks, and incident follow-up.
+In a company, a data engineering owner/on-call team should own the sync and
+schema; a football-data steward should review coverage and corrections; the
+application owner should display freshness and limit unsupported answers.
+
+Failures should alert the pipeline owner through GitHub Actions failure
+notifications. Email preferences and delivery have not been verified, and no
+separate on-call or missing-run alert is configured. Recommended operating rule:
+investigate any failed run or no successful refresh for more than 24 hours;
+this threshold is a proposed escalation rule, not an implemented alert.
+
+The owner should inspect Actions output and sync_runs, check API quota/access
+and database availability, correct the cause without exposing secrets, rerun
+manually, and verify a successful history row. If older corrections may have
+been missed, run a full reconciliation. Inform the application/data steward of
+coverage or freshness gaps; retain failure evidence rather than deleting it.
+
+## Historical raw-source dictionary — 29 October 2026
+
 Checked on 29 October 2026. Evidence is limited to `ingest/fetch.py`, football files under `data/sample/` and `data/raw/`, and the official documentation and terms linked below. Counts describe the saved files, not every record the providers might supply. Documentation and terms were re-read for this revision. “Not documented by the API” means no explicit rule was found in the official pages reviewed; “The terms do not address this” means no explicit provision was found for that particular point, not that permission is granted. Assessments and the owner’s description of local access are labeled separately.
 
 ## 1. Source
