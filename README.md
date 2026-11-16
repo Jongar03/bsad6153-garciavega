@@ -1,5 +1,42 @@
 # BSAD 6153 Project: Exportation 1
 
+## Milestone 3: scheduled football sync
+
+The workflow `.github/workflows/sync.yml` runs every 12 hours at **00:23 and
+12:23 UTC** and also supports **Run workflow** (`workflow_dispatch`). Historical
+Premier League seasons 2023/2024 change infrequently, so twice daily is enough
+to check for corrections without spending quota on minute-by-minute polling.
+Normal operation makes two fixture requests per run, approximately four/day;
+retries can increase this to twenty/day. Other uses of the API key share its
+quota. A weekly full reconciliation catches older corrections. Minute 23 avoids
+the top-of-hour rush, though GitHub may still delay or skip a scheduled run.
+
+Store **DATABASE_URL** (the owner Session pooler connection) and
+**API_FOOTBALL_KEY** as GitHub repository Actions secrets. The workflow passes
+them only to the sync step through environment variables. No values belong in
+YAML or Git. The job has read-only repository access, serializes sync runs, and
+fails visibly if tests, dependency installation, or sync fail. Review GitHub
+Actions notification preferences to receive failure email; YAML cannot guarantee
+delivery. The schedule runs only after this workflow reaches the default branch.
+
+Local commands (from the project folder):
+
+```powershell
+.\.venv\Scripts\python.exe ingest/sync.py --trigger manual
+.\.venv\Scripts\python.exe scripts/status.py
+```
+
+The second command reads history as app_reader. Scheduled/manual triggers are
+recorded separately; manual tests never count toward the required three
+successful scheduled runs spanning at least 48 hours. At a 12-hour cadence,
+three consecutive runs span only 24 hours; wait at least 48 hours from the first
+successful scheduled run. Five consecutive successful runs would span 48 hours.
+
+Setup and submission checklist: `docs/milestone3_sync_setup.md`.
+
+References: [GitHub workflow events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows),
+[API-Football fixture filters](https://www.api-football.com/documentation_v3).
+
 **Student:** Jonathangarcia
 **My decision:** Which team should I bet on before kickoff, based on historical statistics and available bookmaker odds?
 **Website:** &lt;your domain, from Week 4&gt;

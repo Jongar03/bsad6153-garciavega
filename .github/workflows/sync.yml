@@ -1,0 +1,44 @@
+name: Football data sync
+
+on:
+  schedule:
+    - cron: '23 */12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: football-data-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: ingest/requirements.txt
+
+      - name: Install sync dependencies
+        run: python -m pip install -r ingest/requirements.txt
+
+      - name: Run offline checks
+        run: python -m unittest ingest.test_sync ingest.test_football_fetch -v
+
+      - name: Sync football data
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          SYNC_TRIGGER: ${{ github.event_name == 'schedule' && 'schedule' || 'manual' }}
+          PYTHONUNBUFFERED: '1'
+        run: python ingest/sync.py --trigger "$SYNC_TRIGGER"

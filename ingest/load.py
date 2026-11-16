@@ -69,7 +69,7 @@ def goal(value):
     return value
 
 
-def prepare_rows(folder):
+def prepare_rows(folder, minimum_matches=500):
     leagues, teams, matches = {}, {}, {}
     files = sorted(folder.glob("fixtures_*.json"))
     if not files:
@@ -107,8 +107,8 @@ def prepare_rows(folder):
                 matches[match_id] = row
             except (KeyError, TypeError, ValueError, AttributeError) as error:
                 raise ValueError(f"Invalid fixture in {path.name}, row {index}.") from error
-    if len(matches) < 500:
-        raise ValueError(f"Found {len(matches)} unique matches; this assignment requires at least 500.")
+    if len(matches) < minimum_matches:
+        raise ValueError(f"Found {len(matches)} unique matches; at least {minimum_matches} required.")
     return list(leagues.values()), list(teams.values()), list(matches.values())
 
 
