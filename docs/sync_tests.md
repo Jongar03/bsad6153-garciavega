@@ -1,5 +1,167 @@
 # Sync test evidence
 
+## Part G: student-run break-it tests — 2026-11-16
+
+Evidence below was transcribed from the student's PowerShell output and
+Supabase query-result screenshots. The assistant did not rerun these tests or
+query the database while documenting them. All database timestamps are UTC.
+
+### Test 1: back-to-back rerun
+
+**Prediction, agreed by the student before execution:** the second run should
+insert 0 records and update 0 records if the source has not changed.
+
+**Procedure:** from the project folder, run the following command, wait for
+`[ok] Sync committed.`, then run the same command again:
+
+```powershell
+.\.venv\Scripts\python.exe -u ingest/sync.py --trigger manual
+```
+
+Both executions used date-overlap requests for league 39: season 2023 from
+2024-05-12 and season 2024 from 2025-05-18, both through 2026-11-30.
+Both printed `[ok] Sync committed.` and the following counts:
+
+| Table | First-run inserted | First-run updated | Second-run inserted | Second-run updated |
+| --- | ---: | ---: | ---: | ---: |
+| league | 0 | 0 | 0 | 0 |
+| team | 0 | 0 | 0 | 0 |
+| match | 0 | 0 | 0 | 0 |
+
+**Saved sync_runs evidence:**
+
+| Field | First run | Second run |
+| --- | --- | --- |
+| run_id | `e7a9b1a4-a72b-4c9d-841d-6898e0baf066` | `bb451328-51a7-4ede-8a40-ffbb8315e79a` |
+| started_at (UTC) | 2026-11-16 22:11:38.2231+00 | 2026-11-16 22:12:24.904623+00 |
+| finished_at (UTC) | 2026-11-16 22:12:02.663407+00 | 2026-11-16 22:12:51.809579+00 |
+| status | success | success |
+| records_fetched | 33 | 33 |
+| records_inserted | 0 | 0 |
+| records_updated | 0 | 0 |
+| error_message | NULL | NULL |
+| trigger | manual | manual |
+
+The student verified these rows in Supabase with:
+
+```sql
+SELECT run_id, started_at, finished_at, status, records_fetched,
+       records_inserted, records_updated, error_message, trigger
+FROM public.sync_runs
+WHERE run_id IN (
+    'e7a9b1a4-a72b-4c9d-841d-6898e0baf066',
+    'bb451328-51a7-4ede-8a40-ffbb8315e79a'
+)
+ORDER BY started_at;
+```
+
+**Conclusion:** the result matched the prediction. The repeat run inserted no
+duplicates and made no spurious updates for the fetched overlap. This test does
+not establish whether source records outside that overlap changed; those are
+covered by full reconciliation. Neither execution counts as a scheduled run.
+
+### Test 2: temporarily invalid API credentials
+
+**Prediction, agreed by the student before execution:** the sync should fail
+visibly with a nonzero exit code, record a failed sync_runs row, and commit no
+football-data inserts or updates.
+
+**Procedure:** temporarily override the API key only in the PowerShell process.
+The finally block restores the previous value or removes the override when it
+was originally absent. Neither `.env` nor GitHub Actions secrets is edited.
+
+```powershell
+$previousFootballKey = $env:API_FOOTBALL_KEY
+
+try {
+    $env:API_FOOTBALL_KEY = "invalid-key-for-assignment-test"
+    .\.venv\Scripts\python.exe -u ingest/sync.py --trigger manual
+    Write-Host "Sync exit code: $LASTEXITCODE"
+}
+finally {
+    if ($null -eq $previousFootballKey) {
+        Remove-Item Env:\API_FOOTBALL_KEY -ErrorAction SilentlyContinue
+    }
+    else {
+        $env:API_FOOTBALL_KEY = $previousFootballKey
+    }
+    Remove-Variable previousFootballKey
+}
+```
+
+The literal key above is intentionally fake, not a real credential.
+
+**Observed console result:**
+
+```text
+run_id: 0190f15e-37da-4a24-916f-650e4671238d
+[FAIL] API rejected the request; check credentials and plan access.
+Sync exit code: 1
+```
+
+The rejection occurred on the first season's request. The student then queried:
+
+```sql
+SELECT run_id, started_at, finished_at, status, records_fetched,
+       records_inserted, records_updated, error_message, trigger
+FROM public.sync_runs
+WHERE run_id = '0190f15e-37da-4a24-916f-650e4671238d';
+```
+
+**Saved sync_runs evidence:**
+
+| Field | Value |
+| --- | --- |
+| run_id | `0190f15e-37da-4a24-916f-650e4671238d` |
+| started_at (UTC) | 2026-11-16 22:16:33.071729+00 |
+| finished_at (UTC) | 2026-11-16 22:16:35.628464+00 |
+| status | failed |
+| records_fetched | 0 |
+| records_inserted | 0 |
+| records_updated | 0 |
+| error_message | API rejected the request; check credentials and plan access. |
+| trigger | manual |
+
+**Conclusion:** the result matched the prediction. The failure was visible via
+exit code 1 and persisted in the run log with no credentials in the displayed
+error. No data writes were reported. This tests rejection of invalid API
+credentials, not a mid-write interruption or successful recovery run afterward.
+
+### Required golden-question baseline and follow-up
+
+The student ran the following on 2026-11-16 and supplied its console output:
+
+```powershell
+.\.venv\Scripts\python.exe evals/check_reference.py --output evals/results/baseline.json
+```
+
+CSV validation reported 15 questions, 9 baseline sources, and 4 should-decline
+cases. All 11 answerable reference queries passed; Q07, Q08, Q09, and Q15 were
+recorded as decline expectations without SQL or an actual chatbot test. The
+checker verifies the connected role is app_reader before executing references.
+The output confirmed that evidence was saved to `evals/results/baseline.json`.
+The exact baseline evaluation timestamp is stored in that JSON file.
+
+| Reference | Result rows reported |
+| --- | ---: |
+| Q01 | 23 |
+| Q02 | 23 |
+| Q03 | 4 |
+| Q04 | 23 |
+| Q05 | 20 |
+| Q06 | 46 |
+| Q10 | 2 |
+| Q11 | 1 |
+| Q12 | 10 |
+| Q13 | 2 |
+| Q14 | 1 |
+
+**Still pending:** after at least two additional successful scheduled syncs,
+run the checker against this unchanged baseline, save a new comparison file,
+and document which answers changed and why. The manual tests above do not
+satisfy that scheduled-sync requirement. The two break-it tests are documented;
+Part G as a whole is not yet complete.
+
 ## Part D pre-schedule incremental check — 2026-11-16
 
 Prediction recorded before execution by the assistant: now that a committed
