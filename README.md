@@ -1,5 +1,42 @@
 # BSAD 6153 Project: Exportation 1
 
+## Milestone 3: scheduled football sync
+
+The workflow `.github/workflows/sync.yml` runs every 12 hours at **00:23 and
+12:23 UTC** and also supports **Run workflow** (`workflow_dispatch`). Historical
+Premier League seasons 2023/2024 change infrequently, so twice daily is enough
+to check for corrections without spending quota on minute-by-minute polling.
+Normal operation makes two fixture requests per run, approximately four/day;
+retries can increase this to twenty/day. Other uses of the API key share its
+quota. A weekly full reconciliation catches older corrections. Minute 23 avoids
+the top-of-hour rush, though GitHub may still delay or skip a scheduled run.
+
+Store **DATABASE_URL** (the owner Session pooler connection) and
+**API_FOOTBALL_KEY** as GitHub repository Actions secrets. The workflow passes
+them only to the sync step through environment variables. No values belong in
+YAML or Git. The job has read-only repository access, serializes sync runs, and
+fails visibly if tests, dependency installation, or sync fail. Review GitHub
+Actions notification preferences to receive failure email; YAML cannot guarantee
+delivery. The schedule runs only after this workflow reaches the default branch.
+
+Local commands (from the project folder):
+
+```powershell
+.\.venv\Scripts\python.exe ingest/sync.py --trigger manual
+.\.venv\Scripts\python.exe scripts/status.py
+```
+
+The second command reads history as app_reader. Scheduled/manual triggers are
+recorded separately; manual tests never count toward the required three
+successful scheduled runs spanning at least 48 hours. At a 12-hour cadence,
+three consecutive runs span only 24 hours; wait at least 48 hours from the first
+successful scheduled run. Five consecutive successful runs would span 48 hours.
+
+Setup and submission checklist: `docs/milestone3_sync_setup.md`.
+
+References: [GitHub workflow events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows),
+[API-Football fixture filters](https://www.api-football.com/documentation_v3).
+
 **Student:** Jonathangarcia
 **My decision:** Which team should I bet on before kickoff, based on historical statistics and available bookmaker odds?
 **Website:** &lt;your domain, from Week 4&gt;
@@ -131,3 +168,17 @@ The soccer connection check calls `/status` and `/leagues`, verifies an active s
 ## Credits
 
 Soccer data provider: [API-Football / API-Sports](https://www.api-football.com/). This project's calculated probabilities and interpretations will be distinguished from provider data.
+
+## Project Proposal
+
+**Data source and backup.** My main source is API-Football, which I used to collect Premier League fixtures for the 2023 and 2024 seasons. If its access breaks, football-data.org is my backup, since it covers the same competitions and I have already worked with it.
+
+**Decision and workflow.** The decision I chose is "Which match do I analyze?" across Europe's five major football leagues. Today I make it by checking ESPN and OneFootball separately and comparing statistics by hand. In my first logged entry this took 12 minutes with a confidence of 3 out of 5, and much of the time went to switching between apps to find the same kind of information. My system should bring the statistics I care about into one place, so I can decide faster and with more confidence, based on real statistics rather than recent winning streaks.
+
+**Agent idea (first draft).** By Week 6, an agent could run weekly on its own: fetch the upcoming fixtures for the five leagues, pull each team's recent goals, home and away form, and head-to-head history, and produce a short ranked list of matches worth analyzing, with the numbers behind each ranking. It would only read data and write the list. It would never place bets or spend money, and it would ask before doing anything else.
+
+**Risks.**
+- Rate limits: the APIs cap requests, so the agent must wait between calls, back off and retry after a 429 error, and avoid repeating requests.
+- Key expiry: keys can expire or be revoked, so the agent should fail with a clear message, and the key stays in .env, never in Git.
+- Data volume: five leagues over several seasons is a lot of data, so raw files stay out of Git and the agent fetches only what is new.
+- Terms of service: my data dictionary shows that storage and commercial-use terms are partly unclear, so I will use the data only for personal study and re-check the terms before expanding.
