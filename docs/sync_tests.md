@@ -156,11 +156,64 @@ The exact baseline evaluation timestamp is stored in that JSON file.
 | Q13 | 2 |
 | Q14 | 1 |
 
-**Still pending:** after at least two additional successful scheduled syncs,
-run the checker against this unchanged baseline, save a new comparison file,
-and document which answers changed and why. The manual tests above do not
-satisfy that scheduled-sync requirement. The two break-it tests are documented;
-Part G as a whole is not yet complete.
+**Follow-up completed on 2026-11-17:** the student ran:
+
+```powershell
+.\.venv\Scripts\python.exe evals/check_reference.py --compare evals/results/baseline.json --output evals/results/followup.json
+```
+
+The assistant inspected both saved JSON files locally to document the following
+results; no database queries were rerun during this documentation update.
+
+| Evidence | Baseline | Follow-up |
+| --- | --- | --- |
+| File | evals/results/baseline.json | evals/results/followup.json |
+| checked_at_utc | 2026-11-16T21:52:33.927872+00:00 | 2026-11-17T15:12:36.841688+00:00 |
+| database_user | app_reader | app_reader |
+| passed | true | true |
+| Successful scheduled run IDs visible | 0 | 2 |
+
+The follow-up reports two new successful scheduled sync IDs:
+
+- `0a855e23-cbaf-4640-b078-a688eb44091a`
+- `a5225741-bfa3-40ed-9d99-81894eb282bc`
+
+`at_least_two_more_scheduled_syncs` is true. These are database sync UUIDs,
+not GitHub Actions run numbers. The student also supplied an Actions screenshot
+showing successful scheduled workflow runs #2 and #3. The comparison uses the
+same question set and retains the original baseline unchanged.
+
+All 11 answerable queries still passed with the same result-row counts shown
+above. Q01-Q06 and Q10-Q13 returned unchanged answers. Q07-Q09 and Q15 remained
+decline expectations with no SQL execution or chatbot refusal test. No queries
+failed. Only Q14 (sync freshness and seven-day history) changed:
+
+| Q14 field | Baseline | Follow-up |
+| --- | --- | --- |
+| last_successful_sync (UTC) | 2026-11-16T17:10:03.808210+00:00 | 2026-11-17T13:39:56.691355+00:00 |
+| last_sync_with_changes | NULL | NULL |
+| successful_runs_last_7_days | 3 | 7 |
+| inserted_last_7_days | 0 | 0 |
+| updated_last_7_days | 0 | 0 |
+| failed_runs_last_7_days | 0 | 1 |
+| unfinished_runs | 0 | 0 |
+
+**Interpretation:** the successful-run count rose by four: the two manual
+rerun-test successes and two scheduled successes. The single recorded failure
+matches the deliberate invalid-key test. The latest successful-refresh time
+advanced, demonstrating that Q14 reads live operational history rather than a
+fixed answer. This is not evidence of changed football scores: committed
+insert/update totals stayed zero, and all ten football reference answers stayed
+unchanged. That is consistent with rechecking historical seasons without new
+mapped-field corrections. It does not prove that unfetched source records never
+change or that current-season data is present. NULL last_sync_with_changes means
+this history contains no successful sync with data changes, not that the initial
+database was never loaded.
+
+**Part G evidence is now complete:** two documented break-it tests plus the
+required reference comparison after two additional successful scheduled syncs.
+The separate Part D requirement of at least three successful scheduled runs
+spanning at least 48 hours remains pending; this comparison does not satisfy it.
 
 ## Part D pre-schedule incremental check — 2026-11-16
 
