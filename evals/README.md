@@ -13,7 +13,7 @@ Reference answers are SQL, not fixed values, because your data keeps syncing.
 
 ## Milestone 3 question set
 
-`golden_questions.csv` contains 15 questions: 8 labeled baseline and 7 other.
+`golden_questions.csv` contains 15 questions: 9 labeled baseline and 6 other.
 There are 11 reference SQL queries and 4 should_decline cases with empty SQL.
 The fixed scope on historical football questions is league 39 and seasons
 2023/2024; season 2024 means the 2024-25 season, not the calendar year 2024.
@@ -28,17 +28,15 @@ not newly invented provenance, support these source labels:
 | --- | --- |
 | Q01-Q05 | Milestone 2 answered questions 1-5, also in db/queries.sql |
 | Q06 | Broader question: home versus away performance |
-| Q07 | New question about Arsenal player goal totals in 2024-25; source other |
+| Q07 | Broader question: key-player injuries |
 | Q08 | Broader question: who usually scores first |
 | Q09 | Broader question: current streak, skill or luck |
 | Q10-Q15 | New coverage, freshness, historical trend/comparison, and decline questions |
 
-Q08-Q09 adapt running-list topics. On 2026-11-17, the student requested that
-Q07 and Q15 focus on Premier League seasons already collected. Q07 now asks for
-Arsenal player goal totals; Q15 asks for half-time scores in Arsenal-Liverpool
-meetings. Neither detail is stored in the modeled tables. Both remain decline
-cases with empty SQL. Q07 is now labeled other, leaving eight baseline questions.
-These limits describe the stored fields, not the capabilities of the API plan.
+Q07-Q09 adapt the original topics to concrete teams while preserving the missing
+evidence being tested. Q15 addresses the measured five-league coverage gap.
+Injury, goal-order, current-form, and causal claims cannot be inferred from
+historical final scores alone.
 
 ### Validate locally (no database connection)
 
@@ -56,7 +54,7 @@ that a baseline label is authentic.
 Run from the BSAD folder, with APP_DATABASE_URL configured locally:
 
 ```powershell
-.\.venv\Scripts\python.exe evals/check_reference.py --output evals/results/baseline_v2.json
+.\.venv\Scripts\python.exe evals/check_reference.py --output evals/results/baseline.json
 ```
 
 The checker loads only APP_DATABASE_URL, verifies `current_user = app_reader`,
@@ -80,7 +78,7 @@ test an actual chatbot's refusal behavior; that comes in later milestones.
 ### Compare after at least two more successful scheduled syncs
 
 ```powershell
-.\.venv\Scripts\python.exe evals/check_reference.py --compare evals/results/baseline_v2.json --output evals/results/followup_v2.json
+.\.venv\Scripts\python.exe evals/check_reference.py --compare evals/results/baseline.json --output evals/results/followup.json
 ```
 
 The comparison reports changed, unchanged, and failed reference queries. It
@@ -97,12 +95,8 @@ comparison and explanation in docs/sync_tests.md.
 
 ### Current evidence status
 
-The original set passed its baseline and follow-up checks as app_reader, as
-recorded in docs/sync_tests.md. That set is preserved in golden_questions_v1.csv;
-results/baseline.json and results/followup.json remain unchanged evidence for it.
-
-The Q07/Q15 revision changes the question-set fingerprint even though the 11
-answerable SQL queries are unchanged. Do not compare the revised set against
-the old baseline or edit hashes in saved evidence. Use the v2 commands above to
-save a new baseline, then a follow-up after two further successful scheduled
-syncs. This does not reset the separate 48-hour automation evidence period.
+On 2026-11-16, local CSV validation passed (15 questions, 9 baseline, 4 decline)
+and all six offline checker tests passed. No database connection was made.
+Live execution as app_reader,
+the first saved answer baseline, and the post-schedule comparison are pending.
+Do not describe offline validation as successful database execution.
